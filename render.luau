@@ -4,12 +4,20 @@
 --   * HTML blocks and the inline HTML READMEs lean on (<img>, <a>, <p align>, <h1>, <details>, <br>, <b>, <kbd>,
 --     comments, …) become Markdown, since the renderer prints raw HTML as text; an HTML block flows as one
 --     paragraph (badge rows stay on one line) and `align="center"` blocks come back as centered segments;
---   * footnotes become superscript numbers with their notes listed at the end.
+--   * a sized <img> stays an inline <img> with its width/height, the one tag the renderer sizes itself;
+--   * HTML tables come back as table segments whose cells are rendered like a file of their own;
+--   * emoji shortcodes become emoji; footnotes become superscript numbers with their notes listed at the end.
 -- Fenced code and inline code spans pass through untouched.
+
+local EMOJI: { [string]: string } = require("./emoji")
 
 local M = {}
 
-export type Segment = { md: string, center: boolean }
+-- One cell of an HTML table: its content as Markdown, `th` or not, and the attributes the view keeps.
+export type Cell = { md: string, head: boolean, colspan: string?, rowspan: string?, align: string? }
+
+-- A run of Markdown, or an HTML table (then `md` is empty), centered or not.
+export type Segment = { md: string, center: boolean, table: { { Cell } }? }
 
 local SUPERSCRIPT = { ["0"] = "⁰", ["1"] = "¹", ["2"] = "²", ["3"] = "³", ["4"] = "⁴", ["5"] = "⁵", ["6"] = "⁶", ["7"] = "⁷", ["8"] = "⁸", ["9"] = "⁹" }
 
@@ -83,6 +91,22 @@ local function attr(tag: string, name: string): string?
 		or string.match(tag, "%s" .. name .. "%s*=%s*([^%s>\"']+)")
 end
 
+-- An <img>'s `width` or `height` as pixels (`"250"`) or a percentage (`"50%"`), from the attribute or the inline
+-- style; nil when it gives none.
+local function size(tag: string, dim: string): string?
+	local n, pct = string.match(attr(tag, dim) or "", "^%s*(%d+%.?%d*)%s*(%%?)")
+	if not n then
+		n, pct = string.match(attr(tag, "style") or "", "%f[%w%-]" .. dim .. "%s*:%s*(%d+%.?%d*)%s*(%%?)")
+	end
+	return if n then n .. pct else nil
+end
+
+local function file_url(path: string): string
+	return "file://" .. string.gsub(path, "[^%w%-%._~/]", function(c)
+		return string.format("%%%02X", string.byte(c))
+	end)
+end
+
 -- Where text being converted sits: a Markdown line, a table row (no line breaks allowed) or an HTML block
 -- (block tags break paragraphs).
 type Mode = "inline" | "table" | "block"
@@ -125,8 +149,18 @@ local function convert_tag(tag: string, st: State, mode: Mode): string
 		if not src then
 			return ""
 		end
-		local alt = string.gsub(attr(tag, "alt") or "", "[%[%]]", "")
-		return "![" .. alt .. "](" .. destination(M.resolve(src, st.dir)) .. ")"
+		local alt = string.gsub(attr(tag, "alt") or "", "[%[%]\"]", "")
+		local resolved = M.resolve(src, st.dir)
+		local width, height = size(tag, "width"), size(tag, "height")
+		if not width and not height then
+			return "![" .. alt .. "](" .. destination(resolved) .. ")"
+		end
+		-- Tern's renderer sizes an inline <img> by its width and height attributes.
+		local url = if string.sub(resolved, 1, 1) == "/" then file_url(resolved) else resolved
+		return "<img src=\"" .. url .. "\""
+			.. (if width then " width=\"" .. width .. "\"" else "")
+			.. (if height then " height=\"" .. height .. "\"" else "")
+			.. " alt=\"" .. alt .. "\">"
 	elseif name == "a" then
 		if closing == "/" then
 			local href = table.remove(st.links)
@@ -188,6 +222,9 @@ local function convert_text(text: string, st: State, mode: Mode): string
 				end
 				return superscript(n)
 			end)
+			chunk = string.gsub(chunk, ":([%w_+%-]+):", function(code)
+				return EMOJI[code]
+			end)
 			chunk = string.gsub(chunk, "</?[%a][%w]*[^>]*>", function(tag)
 				return convert_tag(tag, st, mode)
 			end)
@@ -247,6 +284,83 @@ local function count(s: string, pattern: string): number
 	return n
 end
 
+local function table_depth(line: string): number
+	local low = string.lower(line)
+	return count(low, "<table[%s>]") - count(low, "</table%s*>")
+end
+
+-- A cell's text without the indentation its HTML nesting gave it: the first line (after the opening tag) is
+-- trimmed, the rest lose the indentation they share, so Markdown written inside a cell still parses.
+local function dedent(text: string): string
+	local lines = {}
+	for line in string.gmatch(text .. "\n", "([^\n]*)\n") do
+		table.insert(lines, line)
+	end
+	local min = math.huge
+	for n = 2, #lines do
+		if not blank(lines[n]) then
+			min = math.min(min, #(string.match(lines[n], "^[ \t]*") :: string))
+		end
+	end
+	lines[1] = string.gsub(lines[1], "^%s+", "")
+	for n = 2, #lines do
+		lines[n] = if min == math.huge then lines[n] else string.sub(lines[n], min + 1)
+	end
+	return table.concat(lines, "\n")
+end
+
+-- The elements in `s` opened by `open` (a pattern capturing the tag name, matched against `low`, `s` lowercased),
+-- each with its opening tag and inner text. Same-name nesting isn't tracked; an unclosed element runs to the
+-- next one's start.
+local function elements(s: string, low: string, open: string): { { tag: string, name: string, inner: string } }
+	local out = {}
+	local i = 1
+	while true do
+		local a, _, name = string.find(low, open, i)
+		local gt = a and string.find(low, ">", a, true)
+		if not a or not gt then
+			break
+		end
+		local ca, cb = string.find(low, "</" .. name .. "%s*>", gt + 1)
+		local na = string.find(low, open, gt + 1)
+		if not ca or (na and na < ca) then
+			ca = na or #s + 1
+			cb = (ca :: number) - 1
+		end
+		table.insert(out, { tag = string.sub(s, a, gt), name = name, inner = string.sub(s, gt + 1, (ca :: number) - 1) })
+		i = (cb :: number) + 1
+	end
+	return out
+end
+
+-- The rows of an HTML table (`raw`, `<table …>` through `</table>`), each cell's content rendered as Markdown.
+local function parse_table(raw: string, dir: string): { { Cell } }
+	local rows = {}
+	for _, tr in elements(raw, string.lower(raw), "<(tr)[%s>]") do
+		local cells: { Cell } = {}
+		for _, td in elements(tr.inner, string.lower(tr.inner), "<(t[dh])[%s>]") do
+			local parts = {}
+			for _, seg in M.render(dedent(td.inner), dir) do
+				if not seg.table and not blank(seg.md) then
+					table.insert(parts, seg.md)
+				end
+			end
+			local align = attr(td.tag, "align") or string.match(attr(td.tag, "style") or "", "text%-align%s*:%s*(%a+)")
+			table.insert(cells, {
+				md = table.concat(parts, "\n\n"),
+				head = td.name == "th",
+				colspan = attr(td.tag, "colspan"),
+				rowspan = attr(td.tag, "rowspan"),
+				align = if align then string.lower(align) else nil,
+			})
+		end
+		if #cells > 0 then
+			table.insert(rows, cells)
+		end
+	end
+	return rows
+end
+
 -- The segments to render for `text`, a file in directory `dir`.
 function M.render(text: string, dir: string): { Segment }
 	local st: State = { dir = dir, comment = false, links = {}, notes = {}, order = {} }
@@ -261,6 +375,8 @@ function M.render(text: string, dir: string): { Segment }
 	local fence: string? = nil
 	local def: string? = nil
 	local html: { string }? = nil
+	-- Open <table> depth in `html`: a table's blank lines (Markdown in cells) don't end the block.
+	local tables = 0
 
 	local function push(line: string, centered: boolean)
 		if centered ~= center then
@@ -273,9 +389,8 @@ function M.render(text: string, dir: string): { Segment }
 		table.insert(cur, line)
 	end
 
-	local function flush_html()
-		local raw = table.concat(html :: { string }, " ")
-		html = nil
+	-- HTML outside tables: one flowing paragraph, centered by `align="center"`.
+	local function flush_flow(raw: string)
 		local low = string.lower(raw)
 		local aligned = string.find(low, "align%s*=%s*[\"']?center") ~= nil or string.find(low, "<center>", 1, true) ~= nil
 		local depth = count(low, "<div[%s>]") + count(low, "<p[%s>]") + count(low, "<center>")
@@ -292,13 +407,46 @@ function M.render(text: string, dir: string): { Segment }
 		push("", centered)
 	end
 
+	local function flush_html()
+		-- Whole comments go first, so a commented-out table stays hidden.
+		local raw = string.gsub(table.concat(html :: { string }, "\n"), "<!%-%-.-%-%->", "")
+		html = nil
+		tables = 0
+		local low = string.lower(raw)
+		local i = 1
+		while true do
+			local a = string.find(low, "<table[%s>]", i)
+			local flow = string.sub(raw, i, if a then a - 1 else #raw)
+			if not blank(flow) then
+				flush_flow((string.gsub(flow, "\n", " ")))
+			end
+			if not a then
+				break
+			end
+			local _, b = string.find(low, "</table%s*>", a)
+			local stop = b or #raw
+			local open = string.match(raw, "^<[^>]*>", a) or ""
+			if #cur > 0 then
+				table.insert(segments, { md = table.concat(cur, "\n"), center = center })
+				cur = {}
+			end
+			table.insert(segments, {
+				md = "",
+				center = region > 0 or string.lower(attr(open, "align") or "") == "center",
+				table = parse_table(string.sub(raw, a, stop), st.dir),
+			})
+			i = stop + 1
+		end
+	end
+
 	for line in string.gmatch((string.gsub(text, "\r\n", "\n")) .. "\n", "([^\n]*)\n") do
 		if html then
-			-- An HTML block runs to a blank line (a comment, to its end).
-			if blank(line) and not st.comment then
+			-- An HTML block runs to a blank line, unless a comment or table is still open.
+			if blank(line) and not st.comment and tables <= 0 then
 				flush_html()
 			else
 				table.insert(html, line)
+				tables += table_depth(line)
 			end
 		elseif fence then
 			push(line, region > 0)
@@ -316,6 +464,7 @@ function M.render(text: string, dir: string): { Segment }
 			def = nil
 		elseif string.match(line, "^ ? ? ?<[%a/!]") then
 			html = { line }
+			tables = table_depth(line)
 			def = nil
 		else
 			local id, body = string.match(line, "^%[%^([^%]%s]+)%]:%s*(.*)$")
@@ -364,7 +513,9 @@ function M.render(text: string, dir: string): { Segment }
 	if #refs > 0 then
 		local tail = "\n\n" .. table.concat(refs, "\n")
 		for _, s in segments do
-			s.md ..= tail
+			if not s.table then
+				s.md ..= tail
+			end
 		end
 	end
 	return segments

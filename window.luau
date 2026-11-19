@@ -12,8 +12,9 @@ local R = require("./render")
 
 local OWNER = "md-preview"
 local MD_EXT = { md = true, markdown = true, mdown = true, mkd = true, mkdn = true }
--- Canvas updates cap at 256 KiB; leave room for the wrapping nodes.
+-- Canvas updates cap at 256 KiB and 2000 nodes; leave room for the wrapping nodes.
 local MAX_BYTES = 240 * 1024
+local MAX_NODES = 1900
 local POLL_MS = 400
 
 local function is_md(path: string): boolean
@@ -80,17 +81,60 @@ local function canvas_file(cx: any, pane: number): string?
 	return file_of(cx.canvas:get(pane))
 end
 
+-- An HTML table as table nodes, cells drawn as Markdown; `mdp-al-*` classes carry cell alignment.
+local function table_node(rows: { { R.Cell } }): any
+	local trs = {}
+	for _, row in rows do
+		local cells = {}
+		for _, c in row do
+			local attrs: { [string]: string } = {}
+			if c.colspan then
+				attrs.colspan = c.colspan
+			end
+			if c.rowspan then
+				attrs.rowspan = c.rowspan
+			end
+			local class = if c.align then "mdp-al-" .. c.align else nil
+			table.insert(cells, tern.ui.el(if c.head then "th" else "td", { class = class, attrs = attrs }, { tern.ui.md(c.md) }))
+		end
+		table.insert(trs, tern.ui.el("tr", {}, cells))
+	end
+	return tern.ui.el("table", { class = "mdp-table" }, trs)
+end
+
 local function view(path: string, text: string): any
 	local parts = {}
-	local budget = MAX_BYTES
+	local bytes, nodes = MAX_BYTES, MAX_NODES
 	for _, seg in R.render(text, R.dirname(path)) do
-		local md = seg.md
-		if #md > budget then
-			md = string.sub(md, 1, budget) .. "\n\n---\n\n_Preview cut at " .. MAX_BYTES // 1024 .. " KiB._"
+		local node
+		if seg.table then
+			local size, count = 0, 1
+			for _, row in seg.table do
+				count += 1 + 2 * #row
+				for _, c in row do
+					size += #c.md
+				end
+			end
+			if size > bytes or count > nodes - 2 then
+				node = tern.ui.md("_This HTML table is too large to show here._")
+				size, count = 0, 1
+			else
+				node = table_node(seg.table)
+			end
+			bytes -= size
+			nodes -= count
+			node = tern.ui.el("div", { class = if seg.center then "mdp-tbl mdp-center" else "mdp-tbl" }, { node })
+		else
+			local md = seg.md
+			if #md > bytes then
+				md = string.sub(md, 1, bytes) .. "\n\n---\n\n_Preview cut at " .. MAX_BYTES // 1024 .. " KiB._"
+			end
+			bytes -= #md
+			node = if seg.center then tern.ui.el("div", { class = "mdp-center" }, { tern.ui.md(md) }) else tern.ui.md(md)
 		end
-		budget -= #md
-		table.insert(parts, if seg.center then tern.ui.el("div", { class = "mdp-center" }, { tern.ui.md(md) }) else tern.ui.md(md))
-		if budget <= 0 then
+		nodes -= 2
+		table.insert(parts, node)
+		if bytes <= 0 or nodes <= 2 then
 			break
 		end
 	end

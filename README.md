@@ -29,11 +29,15 @@ Tern's renderer prints raw HTML as text, so `render.luau` rewrites a file before
   `<em>`, `<code>` and `<kbd>`. `<details>` shows expanded with its `<summary>` in bold, and comments are hidden.
   An HTML block reads as one paragraph, so badge rows stay on one line. `align="center"` blocks, and the Markdown
   inside a centered `<div>`, are centered.
+- Images keep the `width` and `height` from their attributes or inline style.
+- HTML tables become real tables with `colspan`, `rowspan` and cell alignment. Markdown written inside a cell
+  (after a blank line, the way GitHub reads it) is rendered too.
+- Emoji shortcodes like `:rocket:` become emoji, using GitHub's own list (`emoji.luau`, generated from
+  [github/gemoji](https://github.com/github/gemoji), MIT).
 - Footnotes become superscript numbers, with their notes listed at the end.
 - Code fences and inline code pass through untouched.
 
-Not supported: `#fragment` links (the view can't scroll to a heading), image `width` attributes, emoji shortcodes
-like `:rocket:`, and HTML tables (their cells flatten into text).
+Not supported: `#fragment` links. Tern gives plugins no way to scroll a view to a heading.
 
 ## Install
 

@@ -177,6 +177,47 @@
 	background: var(--l1);
 }
 
+/* HTML tables (`<table>` in the file), drawn as table nodes whose cells hold Markdown. */
+.sf-region.sf-main .mdp-doc .mdp-tbl {
+	max-width: 100%;
+	margin: 0 0 14px;
+	overflow-x: auto;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-tbl.mdp-center .mdp-table {
+	margin: 0 auto;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table {
+	border-collapse: collapse;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table > tr > :is(th, td) {
+	padding: 6px 13px;
+	border: 1px solid var(--rd-ring);
+	font-size: 13.5px;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table > tr:nth-child(2n) > td {
+	background: var(--l1);
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table > tr > th .sf-md .md {
+	font-weight: 600;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table .sf-md .md > *:last-child {
+	margin-bottom: 0;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table .mdp-al-center {
+	text-align: center;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-table .mdp-al-right {
+	text-align: right;
+}
+
 /* Images keep their size up to the column's width; a centered block's images sit inline in one row. */
 .sf-region.sf-main .mdp-doc .sf-md .md img {
 	max-width: 100%;
