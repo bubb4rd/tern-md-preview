@@ -62,11 +62,14 @@ local function md_target(target: string, dir: string?): string?
 	return path
 end
 
--- A canvas remembers its file in `about`'s first line, so previews keep following their files across reloads.
+-- A canvas remembers its file in `about`'s first line and, when it was toggled over a file block, that block's pane
+-- on the second, so previews keep following their files and toggle back correctly across reloads.
 local ABOUT_PREFIX = "md-preview:"
 
-local function about(path: string): string
-	return ABOUT_PREFIX .. path .. "\nRead-only rendered view of this Markdown file; it follows the file as it changes."
+local function about(path: string, cover: number?): string
+	return ABOUT_PREFIX .. path .. "\n"
+		.. (if cover then "covers:" .. string.format("%d", cover) .. "\n" else "")
+		.. "Read-only rendered view of this Markdown file; it follows the file as it changes."
 end
 
 -- The file one of this plugin's canvases shows, from its CanvasInfo; nil for other canvases.
@@ -75,6 +78,14 @@ local function file_of(c: any): string?
 		return nil
 	end
 	return string.match(c.about, "^[^\n]+", #ABOUT_PREFIX + 1)
+end
+
+-- The file block one of this plugin's canvases covers, from its CanvasInfo; nil when it covers none.
+local function cover_of(c: any): number?
+	if not file_of(c) then
+		return nil
+	end
+	return tonumber(string.match(c.about, "\ncovers:(%d+)\n"))
 end
 
 local function canvas_file(cx: any, pane: number): string?
@@ -143,8 +154,6 @@ end
 
 -- The text each canvas last drew, so the poll only redraws what changed.
 local drawn: { [number]: string } = {}
--- The file block a toggled canvas covers.
-local covers: { [number]: number } = {}
 local watching = false
 
 local function draw(cx: any, pane: number, path: string, text: string, retitle: boolean)
@@ -152,7 +161,7 @@ local function draw(cx: any, pane: number, path: string, text: string, retitle: 
 	local change: any = { view = view(path, text) }
 	if retitle then
 		change.title = basename(path)
-		change.about = about(path)
+		change.about = about(path, cover_of(cx.canvas:get(pane)))
 	end
 	pcall(cx.canvas.set, cx.canvas, pane, change)
 end
@@ -177,7 +186,6 @@ local function poll(cx: any?)
 	for pane in drawn do
 		if not live[pane] then
 			drawn[pane] = nil
-			covers[pane] = nil
 		end
 	end
 	if next(live) then
@@ -194,8 +202,9 @@ local function watch()
 	end
 end
 
--- Opens `path` rendered in a new canvas placed by `spec` (CanvasSpec placement fields); `placed` gets its pane.
-local function open_rendered(cx: any, path: string, spec: any, placed: ((pane: number, cx: any) -> ())?)
+-- Opens `path` rendered in a new canvas placed by `spec` (CanvasSpec placement fields), covering file block `cover`
+-- when given; `placed` gets its pane.
+local function open_rendered(cx: any, path: string, spec: any, cover: number?, placed: ((pane: number, cx: any) -> ())?)
 	cx.docs:read(path):next(function(text, err, cx2)
 		if not cx2 then
 			return
@@ -205,7 +214,7 @@ local function open_rendered(cx: any, path: string, spec: any, placed: ((pane: n
 			return
 		end
 		spec.title = basename(path)
-		spec.about = about(path)
+		spec.about = about(path, cover)
 		spec.view = view(path, text)
 		local pane, failure = cx2.canvas:open(spec)
 		if not pane then
@@ -236,7 +245,7 @@ end
 
 local function rendered_beside(cx: any, path: string): number?
 	for _, c in cx.canvas:list() do
-		if not covers[c.pane] and file_of(c) == path then
+		if not cover_of(c) and file_of(c) == path then
 			return c.pane
 		end
 	end
@@ -258,15 +267,13 @@ tern.command({
 			return
 		end
 		if shown == "file" then
-			open_rendered(cx, path, { how = "over", target = info.pane }, function(pane)
-				covers[pane] = info.pane
-			end)
+			open_rendered(cx, path, { how = "over", target = info.pane }, info.pane)
 			return
 		end
 		-- Back to source. A toggled canvas closes, bringing back the file block it covers; when the view has since
 		-- followed a link, that block then switches to the file now shown. Any other canvas gives way to the
 		-- source in its slot.
-		local covered = covers[info.pane]
+		local covered = cover_of(cx.canvas:get(info.pane))
 		if covered and cx.session:pane(covered) then
 			cx.layout:close(info.pane)
 			cx.layout:focus(covered)
@@ -366,7 +373,7 @@ tern.route.link(function(link, cx)
 			return { handled = true }
 		end
 	end
-	open_rendered(cx, path, { how = "beside" }, function(pane, cx2)
+	open_rendered(cx, path, { how = "beside" }, nil, function(pane, cx2)
 		cx2.layout:float(pane, chat.pane, "tr", { size = { 0.6, 0.85 } })
 		cx2.layout:focus(pane)
 	end)
