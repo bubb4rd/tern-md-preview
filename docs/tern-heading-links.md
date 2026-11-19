@@ -12,7 +12,15 @@ chat uses, styled like the chat and laid out like a GitHub README. Before drawin
 show: README HTML, relative paths, sized images, HTML tables, emoji shortcodes and footnotes. The view follows the
 file as you edit it.
 
-Nearly all of that works from inside a plugin. Links to headings are the gap, and closing it needs a change in Tern.
+Here is the GlassUsage README in both, opened from the same file: Tern's own view on the left, the plugin (⌥⌘V) on
+the right.
+
+<img src="readme-header.png" width="100%" alt="The top of the GlassUsage README, side by side. Left, Tern's own view prints the HTML as source: p align center, a and img tags with their URLs, h1 align center, and the section links as a href #install, #features and so on. Right, the plugin draws it: the app icon centered at 128 pixels, the GlassUsage title, the Version, macOS and License badges in one row, the tagline, the Install, Features, Providers, Privacy and FAQ links, and the hero image. Notes: 1, README HTML printed as source; 2, drawn centered, sized, badges in a row; 3, section links show but can't jump yet.">
+
+<img src="readme-diagrams.png" width="100%" alt="The menu bar section of the same README. Left, Tern's own view shows the diagram as its img tag, src docs/menu-bar.svg with its alt text, and the next diagram the same way. Right, the plugin draws the SVG full width: the Classic, Duo, Side by side and Custom menu bar layouts. Notes: 1, images print as their img tags; 2, the SVG diagram, drawn full width.">
+
+Nearly all of that works from inside a plugin. Links to headings are the gap (③ above), and closing it needs a change
+in Tern.
 
 ## The gap
 
