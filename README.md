@@ -37,7 +37,8 @@ Tern's renderer prints raw HTML as text, so `render.luau` rewrites a file before
 - Footnotes become superscript numbers, with their notes listed at the end.
 - Code fences and inline code pass through untouched.
 
-Not supported: `#fragment` links. Tern gives plugins no way to scroll a view to a heading.
+Not supported: `#fragment` links. Tern gives plugins no way to scroll a view to a heading; see
+[docs/tern-heading-links.md](docs/tern-heading-links.md) for the evidence and what Tern could change.
 
 ## Install
 
