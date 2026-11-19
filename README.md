@@ -4,6 +4,8 @@ A Tern plugin that renders Markdown files the way GitHub shows a README. It uses
 you get syntax-highlighted code cards, Mermaid diagrams, GitHub alerts, task lists and tables, styled like the agent
 chat: sans body text, mono code and the theme's heading color.
 
+<img src="docs/readme-header.png" width="100%" alt="The top of the GlassUsage README, side by side. Left, Tern's own view prints the HTML as source: p align center, a and img tags with their URLs, h1 align center, and the section links as a href #install, #features and so on. Right, the plugin draws it: the app icon centered at 128 pixels, the GlassUsage title, the Version, macOS and License badges in one row, the tagline, the Install, Features, Providers, Privacy and FAQ links, and the hero image. Notes: 1, README HTML printed as source; 2, drawn centered, sized, badges in a row; 3, section links show but can't jump yet.">
+
 | Do this | What happens |
 |---|---|
 | ⌥⌘V in a Markdown file block | Swaps the file for its rendered view in the same slot. Press ⌥⌘V again to get the source back. |
