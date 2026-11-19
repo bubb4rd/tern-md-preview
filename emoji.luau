@@ -1,6 +1,6 @@
 --!strict
 -- GitHub's emoji shortcodes (`:rocket:` → 🚀), generated from github/gemoji db/emoji.json.
--- gemoji: Copyright (c) 2019 GitHub, Inc. MIT License (https://github.com/github/gemoji/blob/master/LICENSE).
+-- gemoji: Copyright (c) 2019 GitHub, Inc. MIT License; the full notice is in LICENSES/gemoji.txt.
 
 return {
 	["+1"] = "👍",

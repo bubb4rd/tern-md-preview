@@ -33,7 +33,7 @@ Tern's renderer prints raw HTML as text, so `render.luau` rewrites a file before
 - HTML tables become real tables with `colspan`, `rowspan` and cell alignment. Markdown written inside a cell
   (after a blank line, the way GitHub reads it) is rendered too.
 - Emoji shortcodes like `:rocket:` become emoji, using GitHub's own list (`emoji.luau`, generated from
-  [github/gemoji](https://github.com/github/gemoji), MIT).
+  [github/gemoji](https://github.com/github/gemoji)).
 - Footnotes become superscript numbers, with their notes listed at the end.
 - Code fences and inline code pass through untouched.
 
@@ -46,5 +46,13 @@ Not supported: `#fragment` links. Tern gives plugins no way to scroll a view to 
 tern plugin install github.com/bubb4rd/tern-md-preview
 ```
 
+Tested on Tern 0.9.28. The plugin uses Tern's plugin API and some of its CSS class names, which can change between
+releases.
+
 To develop it in place instead, clone it and run `tern plugin link <clone>`. `tern plugin types .` writes
 `tern.d.luau` for luau-lsp; it's ignored by git because it depends on the installed Tern version.
+
+## License
+
+[MIT](LICENSE). `emoji.luau` is generated from [gemoji](https://github.com/github/gemoji), © GitHub, Inc., under the
+MIT License in [LICENSES/gemoji.txt](LICENSES/gemoji.txt).
