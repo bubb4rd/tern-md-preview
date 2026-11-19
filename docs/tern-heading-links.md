@@ -1,5 +1,21 @@
 # Note for Tern: `#heading` links in plugin views
 
+## Context
+
+I wanted to read Markdown in Tern at the quality GitHub shows it. I mostly open READMEs, and they rely on the HTML
+GitHub accepts: centered logos, badge rows, sized images, tables and collapsible sections. Tern's own rendered view
+of a file prints that HTML as raw text, so a README looks broken compared with its GitHub page. I also wanted the result
+to look like part of Tern, the way T3 Code renders Markdown in its own style, rather than an embedded web page.
+
+So this plugin opens a read-only view of a Markdown file. It draws with Tern's own Markdown renderer, the one the agent
+chat uses, styled like the chat and laid out like a GitHub README. Before drawing, it rewrites what the renderer can't
+show: README HTML, relative paths, sized images, HTML tables, emoji shortcodes and footnotes. The view follows the
+file as you edit it.
+
+Nearly all of that works from inside a plugin. Links to headings are the gap, and closing it needs a change in Tern.
+
+## The gap
+
 In this plugin's rendered views, a link like `[Setup](#setup-guide)` does nothing. Tern's plugin API gives a plugin no
 way to scroll a view to a heading, and if a plugin doesn't handle the click itself, Tern passes `#setup-guide` to
 macOS to open. That fails with *"Could not open the link: no application could open #setup-guide"*. The plugin
