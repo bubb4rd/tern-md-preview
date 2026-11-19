@@ -225,6 +225,14 @@ local function convert_text(text: string, st: State, mode: Mode): string
 			chunk = string.gsub(chunk, ":([%w_+%-]+):", function(code)
 				return EMOJI[code]
 			end)
+			-- Adjacent keycaps (`<kbd>⌘</kbd><kbd>R</kbd>`) would turn into "`⌘``R`", one code span with backticks
+			-- in it; a thin space keeps them two.
+			chunk = string.gsub(chunk, "(</(%a+)>)(<(%a+)>)", function(close, a, open, b)
+				if INLINE_TAGS[string.lower(a)] == "`" and INLINE_TAGS[string.lower(b)] == "`" then
+					return close .. "\u{2009}" .. open
+				end
+				return nil
+			end)
 			chunk = string.gsub(chunk, "</?[%a][%w]*[^>]*>", function(tag)
 				return convert_tag(tag, st, mode)
 			end)
