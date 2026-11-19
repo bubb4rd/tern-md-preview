@@ -1,0 +1,261 @@
+/* Rendered Markdown: Tern's agent chat reader type (sans body, mono code, rounded code and diagram cards, the
+   theme's heading color) laid out as a GitHub README page: a centered column, ruled h1/h2, bordered tables,
+   bulleted lists, centered HTML blocks. `.sf-region.sf-main` lifts these over Tern's own `.sf-md .md` rules. */
+
+.sf-region.sf-main:has(> .mdp-doc) {
+	padding: 0;
+}
+
+.sf-region.sf-main .mdp-doc {
+	--rd-ring: light-dark(var(--l3), var(--l2));
+	--rd-line: light-dark(var(--l2), var(--l1));
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 880px;
+	margin: 0 auto;
+	padding: 28px clamp(14px, 5%, 36px) 40px;
+	box-sizing: border-box;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md {
+	font: 14.5px/1.7 var(--sans);
+	letter-spacing: -0.006em;
+	overflow-wrap: break-word;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md > *:last-child {
+	margin-bottom: 14px;
+}
+
+.sf-region.sf-main .mdp-doc > :last-child .md > *:last-child {
+	margin-bottom: 0;
+}
+
+.sf-region.sf-main .mdp-doc > :first-child .md > :first-child {
+	margin-top: 0;
+}
+
+.sf-region.sf-main .mdp-doc .mdp-center .md {
+	text-align: center;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md p {
+	margin: 0 0 14px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md strong {
+	font-weight: 600;
+}
+
+/* Headings */
+.sf-region.sf-main .mdp-doc .sf-md .md :is(h1, h2, h3, h4) {
+	margin: 28px 0 14px;
+	font-family: var(--sans);
+	font-weight: 600;
+	line-height: 1.3;
+	letter-spacing: -0.016em;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md :is(h1, h2) {
+	padding-bottom: 8px;
+	box-shadow: inset 0 -1px 0 var(--rd-ring);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md h1 {
+	font-size: 27px;
+	letter-spacing: -0.022em;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md h2 {
+	font-size: 21px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md h3 {
+	font-size: 17px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md h4 {
+	font-size: 15px;
+}
+
+/* Links and inline code */
+.sf-region.sf-main .mdp-doc .sf-md .md a {
+	text-decoration: none;
+	box-shadow: inset 0 -1px 0 rgb(from var(--accent) r g b/30%);
+	transition: box-shadow 0.15s var(--ease);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md a:hover {
+	box-shadow: inset 0 -1px 0 rgb(from var(--accent) r g b/70%);
+	transition-duration: 0s;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md a:has(img) {
+	box-shadow: none;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md :not(pre) > code {
+	font: 12.5px/1 var(--tv-font, var(--mono));
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: var(--l2);
+	box-shadow: none;
+}
+
+/* Lists */
+.sf-region.sf-main .mdp-doc .sf-md .md :is(ul, ol) {
+	margin: 0 0 14px;
+	padding-left: 26px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md ul {
+	list-style-type: disc;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md ol {
+	list-style-type: decimal;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md li {
+	margin: 0 0 6px;
+	padding-left: 4px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md li :is(ul, ol) {
+	margin: 6px 0 0;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md li ul {
+	list-style-type: circle;
+}
+
+/* A list holding task items keeps bullets on its plain items. */
+.sf-region.sf-main .mdp-doc .sf-md .md ul.tasks > li:not(.task) {
+	display: list-item;
+	list-style-type: disc;
+}
+
+/* Quotes, rules, tables */
+.sf-region.sf-main .mdp-doc .sf-md .md blockquote {
+	margin: 0 0 14px;
+	padding: 0 0 0 14px;
+	border-left: 0;
+	box-shadow: inset 2px 0 0 var(--rd-ring);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md hr {
+	height: 1px;
+	margin: 24px 0;
+	border: 0;
+	background: var(--rd-ring);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .tbl {
+	max-width: 100%;
+	margin: 0 0 14px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md table {
+	border-collapse: collapse;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md :is(th, td) {
+	padding: 6px 13px;
+	border: 1px solid var(--rd-ring);
+	font-family: var(--sans);
+	font-size: 13.5px;
+	overflow-wrap: normal;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md th {
+	font-weight: 600;
+	color: var(--t1);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md tr:nth-child(2n) td {
+	background: var(--l1);
+}
+
+/* Images keep their size up to the column's width; a centered block's images sit inline in one row. */
+.sf-region.sf-main .mdp-doc .sf-md .md img {
+	max-width: 100%;
+}
+
+/* Code blocks and diagrams: the chat reader's cards */
+.sf-region.sf-main .mdp-doc .sf-md .md .code {
+	margin: 4px 0 16px;
+	border-radius: 12px;
+	overflow: hidden;
+	background: var(--code-bg);
+	box-shadow: inset 0 0 0 1px var(--rd-ring);
+	text-align: left;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .code-head {
+	position: static;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 6px 0 14px;
+	opacity: 1;
+	border: 0;
+	border-radius: 0;
+	background: none;
+	box-shadow: inset 0 -1px 0 var(--rd-line);
+	font: 12px/1 var(--sans);
+	color: var(--t3);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .code-head > .code-copy {
+	margin-left: auto;
+	height: 22px;
+	padding: 0 8px;
+	font: 12px/1 var(--sans);
+	color: var(--t3);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .code-head > .code-copy:hover {
+	color: var(--t1);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .code pre {
+	padding: 12px 14px;
+	font: 13px/1.65 var(--tv-font, var(--mono));
+	letter-spacing: 0;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .mfig {
+	margin: 4px 0 16px;
+	border-radius: 12px;
+	box-shadow: inset 0 0 0 1px var(--rd-ring);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .mfig-head > span:not(.grow) {
+	min-width: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .mfig-head {
+	height: 32px;
+	padding: 0 6px 0 14px;
+	box-shadow: inset 0 -1px 0 var(--rd-line);
+	font: 12px/1 var(--sans);
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .mfig-body {
+	padding: 14px;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md :is(.mfig-src, .mfig-body .mmd-fallback) {
+	font: 13px/1.65 var(--tv-font, var(--mono));
+	letter-spacing: 0;
+}
+
+.sf-region.sf-main .mdp-doc .sf-md .md .callout {
+	margin: 0 0 14px;
+	text-align: left;
+}

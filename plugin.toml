@@ -1,0 +1,7 @@
+schema = 1
+id = "md-preview"
+name = "Markdown Preview"
+version = "0.1.0"
+description = "⌥⌘V flips a Markdown file between its source and a read-only view laid out like a GitHub README in Tern's agent chat style (README HTML, relative images and footnotes included); ⌥⇧⌘V previews it beside the source. Previews follow unsaved edits, links between Markdown files open in place, and clicking a Markdown file link in an agent chat floats it rendered over the chat (⌘-click still opens the source)."
+window = "window.luau"
+styles = ["styles.css"]
